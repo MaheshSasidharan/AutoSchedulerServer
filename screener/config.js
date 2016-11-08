@@ -22,6 +22,14 @@ production: {
     server: {
         host:   '127.0.0.1',
         port:   '3421'
+    },
+    poolConfig: {
+        connectionLimit : 100, //important
+        host     : 'ehc1u4pmphj917qf.cbetxkdyhwsb.us-east-1.rds.amazonaws.com',
+        user     : 'm1xeyx0bttelkcw8',
+        password : 'evlob12rbvq02z4g',
+        database : 'ulu8fbsvef0qz3iv',
+        debug    :  false
     }
 }
 };
