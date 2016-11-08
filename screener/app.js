@@ -39,6 +39,7 @@ app.use(sessions({
 app.use(function(req, res, next) {
     if (req.method !== "OPTIONS") {
         if (req.session && req.session.id) {
+            
             DB.FindUser(req.session.id, res, function(err, id) {
                 if (err) throw err;
                 if (id) {
@@ -55,8 +56,15 @@ app.use(function(req, res, next) {
                     res.json({ code: 100, status: false, msg: "Error in connection database" });
                 }
             });
+            
+            /*
+            res.json({ code: 100, status: false, msg: "Error in connection database" });
+            */
+            //next();
+            
         } else {
-            DB.AddUser({ sessionId: Helper.GUID(), ip: req.headers.origin },  res, function(err, id) {
+            
+            DB.AddUser({ sessionId: Helper.GUID(), ip: req.headers.host },  res, function(err, id) {
                 if (id) {
                     req.session.id = id;
                     req.session.id = 1; // For development, use userID 1                    
@@ -64,6 +72,8 @@ app.use(function(req, res, next) {
                 }
                 next();
             });
+            
+            //next();
         }
     } else {
         next();

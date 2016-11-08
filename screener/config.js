@@ -3,7 +3,7 @@ development: {
     poolConfig: {
         connectionLimit : 100, //important
         host     : 'localhost',
-        user     : 'sasidharan',
+        user     : 'root',
         password : 'pass@123',
         database : 'Screener',
         debug    :  false
