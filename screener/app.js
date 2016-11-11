@@ -5,10 +5,12 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var sessions = require("client-sessions");
+var cors = require('cors');
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var assessments = require('./routes/assessments');
+
 
 var Helper = require('./CommonFactory/helper');
 var DB = require('./CommonFactory/databaseManager');
@@ -17,7 +19,7 @@ var app = express();
 
 app.use(function(req, res, next) {
     // Website you wish to allow to connect    
-    res.setHeader('Access-Control-Allow-Origin', 'http://127.0.0.1:8000');
+    res.setHeader('Access-Control-Allow-Origin', 'http://127.0.0.1:3000');
     // Request methods you wish to allow
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
     // Request headers you wish to allow
@@ -28,6 +30,9 @@ app.use(function(req, res, next) {
     // Pass to next layer of middleware
     next();
 });
+
+cors({credentials: true, origin: true});
+app.use(cors());
 
 app.use(sessions({
     cookieName: 'session', // cookie name dictates the key name added to the request object
