@@ -12,6 +12,12 @@ router.get('/test', function(req, res, next) {
 	//res.send('This is from test');
 });
 
+router.post('/PostURL', function(req, res) {
+    var id = req.body.id;
+    var name = req.body.name;
+    res.json({"status": "SUCCESS","ResponseId": id, "ResponseName": name});
+});
+
 var env = process.env.NODE_ENV || 'development';
 var config = require('../config')[env];
 
