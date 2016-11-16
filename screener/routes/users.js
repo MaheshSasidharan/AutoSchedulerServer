@@ -12,10 +12,18 @@ router.get('/test', function(req, res, next) {
 	//res.send('This is from test');
 });
 
+<<<<<<< HEAD
 router.post('/firstpost',function (req,res) {
     console.log(req.body["username"])
     get_users(req,res)
 })
+=======
+router.post('/PostURL', function(req, res) {
+    var id = req.body.id;
+    var name = req.body.name;
+    res.json({"status": "SUCCESS","ResponseId": id, "ResponseName": name});
+});
+>>>>>>> master
 
 var env = process.env.NODE_ENV || 'development';
 var config = require('../config')[env];
