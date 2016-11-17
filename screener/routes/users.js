@@ -13,8 +13,43 @@ router.get('/test', function(req, res, next) {
 });
 
 router.post('/firstpost',function (req,res) {
-    console.log(req.body["username"])
-    get_users(req,res)
+    console.log(req.body["username"]);
+    get_users(req,res);
+})
+
+
+router.post('/initiatemeeting', function(req,res) {
+    console.log(req.body);
+    var startTime = new Date(req.body["starttime"]).toISOString().slice(0, 19).replace('T', ' ');
+    var endTime = new Date(req.body["endtime"]).toISOString().slice(0, 19).replace('T', ' ');
+    var duration = req.body["duration"];
+    var participantsList = req.body["participants"];
+    console.log(startTime);
+    var owner = req.body["owner"];
+    pool.getConnection(function (err, connection) {
+        if (err) {
+            res.json({"code" : 100, "status" : "Error in connection database"});
+            return;
+        }
+
+        console.log('connected as id ' + connection.threadId);
+        console.log("insert into meetingRequest(meetingowner,participantsCount,approvedCount,rangeStart, rangeEnd, meetingduration,status)" +
+            " values(" +owner +","+ participantsList.length+",0,'"+ startTime+"','"+ endTime+"',1,'pending'"+ ")")
+
+        connection.query("insert into meetingRequest(meetingowner,participantsCount,approvedCount,rangeStart, rangeEnd, meetingduration,status)" +
+            " values(" +owner +","+ participantsList.length+",0,'"+ startTime+"','"+ endTime+"',1,'pending'"+ ")",function(err,rows){
+            connection.release();
+            if(!err) {
+                res.json({status: true, users: rows});
+            }
+        });
+
+        connection.on('error', function(err) {
+            res.json({"code" : 100, "status" : "Error in connection database"});
+            return;
+        });
+    });
+
 })
 
 var env = process.env.NODE_ENV || 'development';
@@ -68,6 +103,11 @@ function handle_database(req,res) {
               return;     
         });
   });
+
+
+
+
+
 }
 
 
