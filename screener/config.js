@@ -4,8 +4,8 @@ development: {
         connectionLimit : 100, //important
         host     : 'localhost',
         user     : 'root',
-        password : 'pass@123',
-        database : 'Screener',
+        password : 'password',
+        database : 'autoscheduler',
         debug    :  false
     }
 },
