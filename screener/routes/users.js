@@ -12,10 +12,14 @@ router.get('/test', function(req, res, next) {
 	//res.send('This is from test');
 });
 
+router.post('/signup', function (req, res, next) {
+   sign_up(req, res);
+});
+
 router.post('/firstpost',function (req,res) {
     console.log(req.body["username"]);
     get_users(req,res);
-})
+});
 
 
 router.post('/initiatemeeting', function(req,res) {
@@ -56,6 +60,29 @@ var env = process.env.NODE_ENV || 'development';
 var config = require('../config')[env];
 
 var pool = mysql.createPool(config.poolConfig);
+
+function sign_up(req, res) {
+    pool.getConnection(function (err, connection) {
+        if (err) {
+            res.json({"code" : 100, "status" : "Error in connection database"});
+            return;
+        }
+
+        console.log('connected as id ' + connection.threadId);
+        console.log("insert into users values(" + req.body["username"] + "," + req.body["identification"] +");");
+        connection.query("insert into users values(" + req.body["username"] + "," + req.body["identification"] +");",function(err,rows){
+            connection.release();
+            if(!err) {
+                res.json({status: true});
+            }
+        });
+
+        connection.on('error', function(err) {
+            res.json({"code" : 100, "status" : "Error in connection database"});
+            return;
+        });
+    });
+}
 
 function get_users(req, res) {
     pool.getConnection(function (err, connection) {
