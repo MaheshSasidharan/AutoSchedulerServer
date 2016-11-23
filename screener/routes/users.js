@@ -16,11 +16,14 @@ router.post('/signup', function (req, res, next) {
    sign_up(req, res);
 });
 
+router.post('/updatefreetime',function (req,res) {
+    updateFreeTime(req, res)
+});
+
 router.post('/firstpost',function (req,res) {
     console.log(req.body["username"]);
     get_users(req,res);
 });
-
 
 router.post('/initiatemeeting', function(req,res) {
     console.log(req.body);
@@ -60,6 +63,54 @@ var env = process.env.NODE_ENV || 'development';
 var config = require('../config')[env];
 
 var pool = mysql.createPool(config.poolConfig);
+
+
+function freetimes(req, res) {
+    console.log(req.body)
+}
+
+
+function updateFreeTime(req, res)
+{
+
+    console.log(req.body["username"])
+    var user = req.body["username"]
+    var meeting = parseInt(req.body["meetingid"])
+    var starts = req.body["strtdates"]
+    var ends = req.body["enddates"]
+    console.log(ends)
+    var query = "insert into availabletime values"
+    for (i = 0; i < starts.length-1; i++) {
+        console.log(starts[i])
+        var startTime = new Date(starts[i]).toISOString().slice(0, 19).replace('T', ' ');
+        var endTime = new Date(ends[i]).toISOString().slice(0, 19).replace('T', ' ');
+        query = query + "(" + meeting + ",'" + user + "','" + startTime + "','" + endTime + "'),"
+    }
+    var startTime = new Date(starts[starts.length-1]).toISOString().slice(0, 19).replace('T', ' ');
+    var endTime = new Date(ends[starts.length-1]).toISOString().slice(0, 19).replace('T', ' ');
+    query = query + "(" + meeting + ",'" + user + "','" + startTime + "','" + endTime + "');"
+    pool.getConnection(function (err, connection) {
+        if (err) {
+            res.json({"code": 100, "status": "Error in connection database"});
+            return;
+        }
+
+        //console.log('connected as id ' + connection.threadId);
+        console.log(query);
+        connection.query(query, function (err, rows) {
+            connection.release();
+            if(!err) {
+                res.json({status: true});
+            }
+        });
+
+        connection.on('error', function (err) {
+            res.json({"code": 100, "status": "Error in connection database"});
+            return;
+        });
+    });
+
+}
 
 function sign_up(req, res) {
     pool.getConnection(function (err, connection) {
