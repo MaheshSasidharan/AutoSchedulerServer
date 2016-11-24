@@ -2,7 +2,15 @@ var express = require('express');
 var mysql = require('mysql');
 var router = express.Router();
 var apn = require('apn');
+
+var env = process.env.NODE_ENV || 'development';
+var config = require('../config')[env];
+
+var Constants = require('../CommonFactory/constants');
 var PushNM = require('../CommonFactory/pushNotificationManager');
+
+
+var pool = mysql.createPool(config.poolConfig);
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {
@@ -62,16 +70,9 @@ router.post('/initiatemeeting', function(req, res) {
 
 })
 
-var env = process.env.NODE_ENV || 'development';
-var config = require('../config')[env];
-
-var pool = mysql.createPool(config.poolConfig);
-
-
 function freetimes(req, res) {
     console.log(req.body)
 }
-
 
 function updateFreeTime(req, res) {
 
@@ -115,6 +116,54 @@ function updateFreeTime(req, res) {
 }
 
 function sign_up(req, res) {
+    var params = {
+        sType: "checkUserExist",
+        errors: {
+            errors_101: Constants.Errors._101,
+            queryFailed: Constants.Errors.SomethingWentWrong
+        },
+        query: Constants.Queries.Scheduler.CheckUserExist.query,
+        whereVals: [req.body["username"]],
+        callback: function(rowsInner) {
+            if (rowsInner && rowsInner.length) {
+                // Found user, so update token
+                var params = {
+                    sType: "updateUser",
+                    errors: {
+                        errors_101: Constants.Errors._101,
+                        queryFailed: Constants.Errors.SomethingWentWrong
+                    },
+                    query: Constants.Queries.Scheduler.UpdateUser.query,
+                    whereVals: [{ user_device_id: req.body["identification"] }, req.body["username"]],
+                    callback: function(rowsInner) {
+                        res.json({ status: true });
+                        PushNM.SendNotification(req.body["identification"], "Hi This is your number: " + req.body["username"]);
+                    }
+                };
+                handle_database(req, res, params);
+            } else { // Add new one
+                var where = { users_number: req.body["username"], user_device_id: req.body["identification"] };
+                var params = {
+                    sType: "insertUser",
+                    errors: {
+                        errors_101: Constants.Errors._101,
+                        queryFailed: Constants.Errors.SomethingWentWrong
+                    },
+                    query: Constants.Queries.Scheduler.InsertUser.query,
+                    whereVals: where,
+                    callback: function(rowsInner) {
+                        res.json({ status: true });
+                        PushNM.SendNotification(req.body["identification"], "Hi This is your number: " + req.body["username"]);
+                    }
+                };
+                handle_database(req, res, params);
+            }
+        }
+    };
+    handle_database(req, res, params);
+}
+/*
+function sign_up(req, res) {
     pool.getConnection(function(err, connection) {
         if (err) {
             res.json({ "code": 100, "status": "Error in connection database" });
@@ -123,8 +172,33 @@ function sign_up(req, res) {
 
         console.log('connected as id ' + connection.threadId);
         console.log("insert into users values(" + req.body["username"] + "," + req.body["identification"] + ");");
-        var oSaveDate = { users_number: req.body["username"], user_device_id: req.body["identification"]};
+        var oSaveDate = { users_number: req.body["username"], user_device_id: req.body["identification"] };
         connection.query("INSERT INTO users SET ?", oSaveDate, function(err, rows) {
+            connection.release();
+            if (!err) {
+                PushNM.SendNotification(req.body["identification"], "Hi This is your number: " + req.body["username"]);
+                res.json({ status: true });
+            }
+        });
+
+        connection.on('error', function(err) {
+            res.json({ "code": 100, "status": "Error in connection database" });
+            return;
+        });
+    });
+}
+*/
+function checkUserExist(req, res) {
+    pool.getConnection(function(err, connection) {
+        if (err) {
+            res.json({ "code": 100, "status": "Error in connection database" });
+            return;
+        }
+
+        console.log('connected as id ' + connection.threadId);
+        console.log("insert into users values(" + req.body["username"] + "," + req.body["identification"] + ");");
+        var oSaveDate = { users_number: req.body["username"], user_device_id: req.body["identification"] };
+        connection.query("SELECT * FROM users SET ?", oSaveDate, function(err, rows) {
             connection.release();
             if (!err) {
                 PushNM.SendNotification(req.body["identification"], "Hi This is your number: " + req.body["username"]);
@@ -163,8 +237,8 @@ function get_users(req, res) {
     });
 }
 
+/*
 function handle_database(req, res) {
-
     pool.getConnection(function(err, connection) {
         if (err) {
             res.json({ "code": 100, "status": "Error in connection database" });
@@ -186,41 +260,40 @@ function handle_database(req, res) {
         });
     });
 }
+*/
+function handle_database(req, res, params) {
+    pool.getConnection(function(err, connection) {
+        if (err) {
+            res.json(params.errors.errors_101);
+            return;
+        }
+        switch (params.sType) {
+            case "BulkInsert":
+                connection.query(params.query, [params.whereVals], function(err, rows) {
+                    connection.release();
+                    if (!err) {
+                        params.callback(rows);
+                    } else {
+                        res.json({ status: false, msg: params.errors.queryFailed });
+                    }
+                });
+                break;
+            default:
+                connection.query(params.query, params.whereVals, function(err, rows) {
+                    connection.release();
+                    if (!err) {
+                        params.callback(rows);
+                    } else {
+                        res.json({ status: false, msg: params.errors.queryFailed });
+                    }
+                });
+        }
 
-router.get('/testpn2', function(req, res) {
-    {
-        var apn = require('apn');
-
-        var token = "f8e9e1792f32062f7afc378e5994da8ee592483d01acdbd2c5ed7d16d3432799"; // iPad
-
-        var service = new apn.Provider({
-            cert: __dirname + "/conf/cert.pem",
-            key: __dirname + "/conf/key.pem",
+        connection.on('error', function(err) {
+            res.json(params.errors.errors_101);
+            return;
         });
-
-        service.on("completed", function() { console.log("Completed!") });
-        service.on("connected", function() { console.log("Connected"); });
-        service.on('disconnected', function() { console.log("Disconnected", arguments); });
-        service.on('error', function(err) { console.log("Standard error", err); });
-        service.on('socketError', function(err) { console.log("Socket error", err.message); });
-        service.on('timeout', function() { console.log("Timeout"); });
-        service.on('transmissionError', function(err) { console.log("Transmission Error", err); });
-
-        service.on("transmitted", function(notification) {
-            console.log("Transmitted");
-        });
-
-        var note = new apn.Notification({
-            alert:  "Breaking News: I just sent my first Push Notification"
-        });
-        note.badge = 1;
-        note.topic = "autosched.team12.com";
-
-        service.send(note, token).then(function(){
-            res.json({ "code": 100, "status": "SUCCESS" });
-        });
-        service.shutdown();
-    }
-});
+    });
+}
 
 module.exports = router;
