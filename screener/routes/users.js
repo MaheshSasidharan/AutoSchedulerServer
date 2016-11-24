@@ -17,85 +17,13 @@ router.post('/signup', function(req, res, next) {
     sign_up(req, res);
 });
 
+router.post('/updatefreetime', function(req, res) {
+    updateFreeTime(req, res)
+});
+
 router.post('/firstpost', function(req, res) {
     console.log(req.body["username"]);
     get_users(req, res);
-});
-
-
-router.get('/testpn', function(req, res) {
-    {
-        /*
-                var apn = require('apn');
-
-                var options = {
-          token: {
-            key: "path/to/key.p8",
-            keyId: "T0K3NK3Y1D",
-            teamId: "T34M1D",
-          },
-          production: false,
-        };
-
-        var apnProvider = new apn.Provider(options);
-        */
-
-
-        var apns = require("apn"),
-            options, connection, notification;
-
-        //console.log(join(__dirname, '../conf/key.pem'));
-        options = {
-            keyFile: __dirname + "/conf/key.pem",
-            certFile: __dirname + "/conf/cert.pem",
-            debug: true
-        };
-
-        connection = new apns.Provider(options);
-
-        notification = new apns.Notification();
-        notification.device = new apns.Device("f8e9e1792f32062f7afc378e5994da8ee592483d01acdbd2c5ed7d16d3432799");
-        notification.alert = "Hello World !";
-
-        connection.sendNotification(notification);
-
-    }
-});
-
-router.get('/testpn2', function(req, res) {
-    {
-        var apn = require('apn');
-
-        var token = "f8e9e1792f32062f7afc378e5994da8ee592483d01acdbd2c5ed7d16d3432799"; // iPad
-
-        var service = new apn.Provider({
-            cert: __dirname + "/conf/cert.pem",
-            key: __dirname + "/conf/key.pem",
-        });
-
-        service.on("completed", function() { console.log("Completed!") });
-        service.on("connected", function() { console.log("Connected"); });
-        service.on('disconnected', function() { console.log("Disconnected", arguments); });
-        service.on('error', function(err) { console.log("Standard error", err); });
-        service.on('socketError', function(err) { console.log("Socket error", err.message); });
-        service.on('timeout', function() { console.log("Timeout"); });
-        service.on('transmissionError', function(err) { console.log("Transmission Error", err); });
-
-        service.on("transmitted", function(notification) {
-            console.log("Transmitted");
-        });
-
-        var note = new apn.Notification({
-            alert:  "Breaking News: I just sent my first Push Notification"
-        });
-        note.badge = 1;
-        note.topic = "autosched.team12.com";
-
-        service.send(note, token).then(function(){
-            res.json({ "code": 100, "status": "SUCCESS" });
-        });
-        service.shutdown();
-    }
 });
 
 router.post('/initiatemeeting', function(req, res) {
@@ -137,6 +65,53 @@ var env = process.env.NODE_ENV || 'development';
 var config = require('../config')[env];
 
 var pool = mysql.createPool(config.poolConfig);
+
+
+function freetimes(req, res) {
+    console.log(req.body)
+}
+
+
+function updateFreeTime(req, res) {
+
+    console.log(req.body["username"])
+    var user = req.body["username"]
+    var meeting = parseInt(req.body["meetingid"])
+    var starts = req.body["strtdates"]
+    var ends = req.body["enddates"]
+    console.log(ends)
+    var query = "insert into availabletime values"
+    for (i = 0; i < starts.length - 1; i++) {
+        console.log(starts[i])
+        var startTime = new Date(starts[i]).toISOString().slice(0, 19).replace('T', ' ');
+        var endTime = new Date(ends[i]).toISOString().slice(0, 19).replace('T', ' ');
+        query = query + "(" + meeting + ",'" + user + "','" + startTime + "','" + endTime + "'),"
+    }
+    var startTime = new Date(starts[starts.length - 1]).toISOString().slice(0, 19).replace('T', ' ');
+    var endTime = new Date(ends[starts.length - 1]).toISOString().slice(0, 19).replace('T', ' ');
+    query = query + "(" + meeting + ",'" + user + "','" + startTime + "','" + endTime + "');"
+    pool.getConnection(function(err, connection) {
+        if (err) {
+            res.json({ "code": 100, "status": "Error in connection database" });
+            return;
+        }
+
+        //console.log('connected as id ' + connection.threadId);
+        console.log(query);
+        connection.query(query, function(err, rows) {
+            connection.release();
+            if (!err) {
+                res.json({ status: true });
+            }
+        });
+
+        connection.on('error', function(err) {
+            res.json({ "code": 100, "status": "Error in connection database" });
+            return;
+        });
+    });
+
+}
 
 function sign_up(req, res) {
     pool.getConnection(function(err, connection) {
@@ -207,12 +182,42 @@ function handle_database(req, res) {
             return;
         });
     });
-
-
-
-
-
 }
 
+router.get('/testpn2', function(req, res) {
+    {
+        var apn = require('apn');
+
+        var token = "f8e9e1792f32062f7afc378e5994da8ee592483d01acdbd2c5ed7d16d3432799"; // iPad
+
+        var service = new apn.Provider({
+            cert: __dirname + "/conf/cert.pem",
+            key: __dirname + "/conf/key.pem",
+        });
+
+        service.on("completed", function() { console.log("Completed!") });
+        service.on("connected", function() { console.log("Connected"); });
+        service.on('disconnected', function() { console.log("Disconnected", arguments); });
+        service.on('error', function(err) { console.log("Standard error", err); });
+        service.on('socketError', function(err) { console.log("Socket error", err.message); });
+        service.on('timeout', function() { console.log("Timeout"); });
+        service.on('transmissionError', function(err) { console.log("Transmission Error", err); });
+
+        service.on("transmitted", function(notification) {
+            console.log("Transmitted");
+        });
+
+        var note = new apn.Notification({
+            alert:  "Breaking News: I just sent my first Push Notification"
+        });
+        note.badge = 1;
+        note.topic = "autosched.team12.com";
+
+        service.send(note, token).then(function(){
+            res.json({ "code": 100, "status": "SUCCESS" });
+        });
+        service.shutdown();
+    }
+});
 
 module.exports = router;
