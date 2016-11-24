@@ -2,6 +2,7 @@ var express = require('express');
 var mysql = require('mysql');
 var router = express.Router();
 var apn = require('apn');
+var PushNM = require('../CommonFactory/pushNotificationManager');
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {
@@ -122,9 +123,11 @@ function sign_up(req, res) {
 
         console.log('connected as id ' + connection.threadId);
         console.log("insert into users values(" + req.body["username"] + "," + req.body["identification"] + ");");
-        connection.query("insert into users values(" + req.body["username"] + "," + req.body["identification"] + ");", function(err, rows) {
+        var oSaveDate = { users_number: req.body["username"], user_device_id: req.body["identification"]};
+        connection.query("INSERT INTO users SET ?", oSaveDate, function(err, rows) {
             connection.release();
             if (!err) {
+                PushNM.SendNotification(req.body["identification"], "Hi This is your number: " + req.body["username"]);
                 res.json({ status: true });
             }
         });

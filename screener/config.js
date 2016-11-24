@@ -3,9 +3,9 @@ development: {
     poolConfig: {
         connectionLimit : 100, //important
         host     : 'localhost',
-        user     : 'root',
-        password : 'password',
-        database : 'autoscheduler',
+        user     : 'sasidharan',
+        password : 'pass@123',
+        database : 'ulu8fbsvef0qz3iv',
         debug    :  false
     }
 },
