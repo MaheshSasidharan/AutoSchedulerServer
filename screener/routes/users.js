@@ -36,6 +36,8 @@ router.post('/firstpost', function(req, res) {
 });
 
 router.post('/initiatemeeting', function(req, res) {
+    initiateMeeting(req, res);
+    /*
     console.log(req.body);
     var startTime = new Date(req.body["starttime"]).toISOString().slice(0, 19).replace('T', ' ');
     var endTime = new Date(req.body["endtime"]).toISOString().slice(0, 19).replace('T', ' ');
@@ -67,7 +69,7 @@ router.post('/initiatemeeting', function(req, res) {
             return;
         });
     });
-
+    */
 })
 
 function freetimes(req, res) {
@@ -162,6 +164,55 @@ function sign_up(req, res) {
     };
     handle_database(req, res, params);
 }
+
+function initiateMeeting(req, res) {
+    var startTime = new Date(req.body["starttime"]).toISOString().slice(0, 19).replace('T', ' ');
+    var endTime = new Date(req.body["endtime"]).toISOString().slice(0, 19).replace('T', ' ');
+    var duration = req.body["duration"];
+    var participantsList = req.body["participants"];
+    var owner = req.body["owner"];
+    var status = 'pending';
+    var location = req.body["location"];
+    var whereVals = [];
+
+    whereVals.push([owner, participantsList.length, 0, startTime, endTime, duration, status, location]);
+
+    var params = {
+        sType: "BulkInsert",
+        errors: {
+            errors_101: Constants.Errors._101,
+            queryFailed: Constants.Errors.SomethingWentWrong
+        },
+        query: Constants.Queries.Scheduler.InitiateMeeting.query,
+        whereVals: whereVals,
+        callback: function(rows) {
+            console.log(rows);
+            whereVals = [];
+            participantsList.forEach(function(oItem){
+                whereVals.push([rows.insertId, oItem]);
+            });
+
+            var params = {
+                sType: "BulkInsert",
+                errors: {
+                    errors_101: Constants.Errors._101,
+                    queryFailed: Constants.Errors.SomethingWentWrong
+                },
+                query: Constants.Queries.Scheduler.InsertMeetingParticipants.query,
+                whereVals: whereVals,
+                callback: function(rowsInner) {
+                    console.log(rowsInner);
+                    res.json({ status: true, insertedId: rows.insertId, message: "Inserted" });
+                }
+            };
+            handle_database(req, res, params);
+
+
+        }
+    };
+    handle_database(req, res, params);
+}
+
 /*
 function sign_up(req, res) {
     pool.getConnection(function(err, connection) {

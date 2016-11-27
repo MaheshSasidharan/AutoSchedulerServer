@@ -9,7 +9,15 @@ var Constants = {
             },
             InsertUser:{
             	query: "INSERT INTO Users SET ?"
-            }
+            },
+			InitiateMeeting: 
+			{
+				query: "INSERT INTO MeetingRequest (meetingowner,participantsCount,approvedCount,rangeStart, rangeEnd, meetingduration,status,location) VALUES ?"
+			},
+			InsertMeetingParticipants: 
+			{
+				query: "INSERT INTO MeetingParticipants (meetingid, user) VALUES ?"
+			},
         }
     },
     Errors: {
