@@ -22,7 +22,6 @@ router.post('/updatefreetime',function (req,res) {
 
 router.get('/commonfrees', function(req, res, next) {
     console.log("kalyan")
-    checkUsersTapped(1,req, res)
 });
 
 
@@ -286,6 +285,126 @@ function checkUsersTapped(meetingid)
                 if(rows[0]["approvedCount"] == rows[0]["participantsCount"]) {
                     getcommonfreetime(meetingid)
                     clearFlag(meetingid)
+                }
+            }
+        });
+
+        connection.on('error', function (err) {
+            return;
+        });
+    });
+}
+
+
+function setPriorities(req, res)
+{
+    console.log(req.body["username"])
+    var user = req.body["username"]
+    var meeting = parseInt(req.body["meetingid"])
+    var starts = req.body["strtdates"]
+    var ends = req.body["enddates"]
+    var ranks = req.body["ranks"]
+    console.log(ends)
+    var query = "insert into meetingrankings values"
+    for (i = 0; i < starts.length-1; i++) {
+        console.log(starts[i])
+        var startTime = new Date(starts[i]).toISOString().slice(0, 19).replace('T', ' ');
+        var endTime = new Date(ends[i]).toISOString().slice(0, 19).replace('T', ' ');
+        query = query + "(" + meeting + ",'" + user + "','" + startTime + "','" + endTime + "', " + ranks[i] +"),"
+    }
+    var startTime = new Date(starts[starts.length-1]).toISOString().slice(0, 19).replace('T', ' ');
+    var endTime = new Date(ends[starts.length-1]).toISOString().slice(0, 19).replace('T', ' ');
+    query = query + "(" + meeting + ",'" + user + "','" + startTime + "','" + endTime + "', " + ranks[i] +");"
+    pool.getConnection(function (err, connection) {
+        if (err) {
+            res.json({"code": 100, "status": "Error in connection database"});
+            return;
+        }
+
+        //console.log('connected as id ' + connection.threadId);
+        console.log(query);
+        connection.query(query, function (err, rows) {
+            connection.release();
+            if(!err) {
+                updateFlag(meeting)
+                checkUsersRanked(meeting)
+                res.json({status: true});
+            }
+        });
+
+        connection.on('error', function (err) {
+            res.json({"code": 100, "status": "Error in connection database"});
+            return;
+        });
+    });
+}
+
+function finalEvent(meetingd, start, end) {
+    var query = "update meetingRequest set meetingRequest.status = 'Done',  meetingRequest.finalstarttime = '"+start+"' where meeting_Id = "+meetingd+";";
+    console.log(query)
+    pool.getConnection(function (err, connection) {
+        if (err) {
+            return;
+        }
+
+        console.log('connected as id ' + connection.threadId);
+
+        connection.query(query, function (err, rows) {
+            connection.release();
+            if (!err) {
+                //push all participants to update their callenders
+            }
+        });
+
+        connection.on('error', function (err) {
+            return;
+        });
+    });
+
+
+}
+
+function FinilizeSchedule(meetingid)
+{
+    var query = "select starttime, endtime, sum(rank) from meetingrankings where meetingid = "+meetingid+" group by starttime, endtime having sum(rank) > 0 order by sum(rank), starttime limit 1";
+    console.log(query)
+    pool.getConnection(function (err, connection) {
+        if (err) {
+            return;
+        }
+
+        console.log('connected as id ' + connection.threadId);
+
+        connection.query(query, function (err, rows) {
+            connection.release();
+            if (!err) {
+                console.log(rows)
+                finalEvent(meetingid, rows[0]["starttime"], rows[0]["endtime"])
+            }
+        });
+
+        connection.on('error', function (err) {
+            return;
+        });
+    });
+}
+
+function checkUsersRanked(meetingid)
+{
+    var query = "SELECT approvedCount,participantsCount FROM autoscheduler.meetingRequest where meeting_id = "+meetingid+"; "
+    console.log(query)
+    pool.getConnection(function (err, connection) {
+        if (err) {
+            return;
+        }
+
+        console.log('connected as id ' + connection.threadId);
+
+        connection.query(query, function (err, rows) {
+            connection.release();
+            if (!err) {
+                if(rows[0]["approvedCount"] == rows[0]["participantsCount"]) {
+                    FinilizeSchedule(meetingid)
                 }
             }
         });
