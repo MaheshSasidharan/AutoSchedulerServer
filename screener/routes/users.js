@@ -20,6 +20,13 @@ router.post('/updatefreetime',function (req,res) {
     updateFreeTime(req, res)
 });
 
+router.get('/commonfrees', function(req, res, next) {
+    console.log("kalyan")
+    checkUsersTapped(1,req, res)
+});
+
+
+
 router.post('/firstpost',function (req,res) {
     console.log(req.body["username"]);
     get_users(req,res);
@@ -100,6 +107,8 @@ function updateFreeTime(req, res)
         connection.query(query, function (err, rows) {
             connection.release();
             if(!err) {
+                updateFlag(meeting)
+                checkUsersTapped(meeting)
                 res.json({status: true});
             }
         });
@@ -160,33 +169,131 @@ function get_users(req, res) {
 }
 
 function handle_database(req,res) {
-    
-    pool.getConnection(function(err,connection){
+
+    pool.getConnection(function (err, connection) {
         if (err) {
-          res.json({"code" : 100, "status" : "Error in connection database"});
-          return;
-        }   
+            res.json({"code": 100, "status": "Error in connection database"});
+            return;
+        }
 
         console.log('connected as id ' + connection.threadId);
-        
-        connection.query("select * from users",function(err,rows){
+
+        connection.query("select * from users", function (err, rows) {
             connection.release();
-            if(!err) {
+            if (!err) {
                 res.json({status: true, users: rows});
-            }           
+            }
         });
 
-        connection.on('error', function(err) {      
-              res.json({"code" : 100, "status" : "Error in connection database"});
-              return;     
+        connection.on('error', function (err) {
+            res.json({"code": 100, "status": "Error in connection database"});
+            return;
         });
-  });
-
-
-
-
+    });
 
 }
 
+
+
+function getcommonfreetime(meetingId) {
+
+
+    var query = "insert into meetingsuggestions (meetingid, starttime, endtime) select "+meetingId+", f.startDate, f.endDate from (select s.* from (SELECT startDate, endDate, count(endDate) as 'counts' FROM autoscheduler.availabletime where meetingid = 1 " +
+        "group by startDate, endDate) s where s.counts = (select participantsCount from meetingRequest where meeting_id = " + meetingId + ")) as f"
+    console.log(query)
+    pool.getConnection(function (err, connection) {
+        if (err) {
+            res.json({"code": 100, "status": "Error in connection database"});
+            return;
+        }
+
+        console.log('connected as id ' + connection.threadId);
+
+        connection.query(query, function (err, rows) {
+            connection.release();
+            if (!err) {
+                res.json({status: true, users: rows});
+            }
+        });
+
+        connection.on('error', function (err) {
+            res.json({"code": 100, "status": "Error in connection database"});
+            return;
+        });
+    });
+}
+
+
+function updateFlag(meetingId)
+{
+    var query = "update meetingRequest set approvedCount = approvedCount+1 where meeting_id ="+meetingId+";"
+    console.log(query)
+    pool.getConnection(function (err, connection) {
+        if (err) {
+            return;
+        }
+
+        console.log('connected as id ' + connection.threadId);
+
+        connection.query(query, function (err, rows) {
+            connection.release();
+
+        });
+
+        connection.on('error', function (err) {
+            return;
+        });
+    });
+}
+
+
+function clearFlag(meetingId)
+{
+    var query = "update meetingRequest set approvedCount = 0 where meeting_id ="+meetingId+";"
+    console.log(query)
+    pool.getConnection(function (err, connection) {
+        if (err) {
+            return;
+        }
+
+        console.log('connected as id ' + connection.threadId);
+
+        connection.query(query, function (err, rows) {
+            connection.release();
+
+        });
+
+        connection.on('error', function (err) {
+            return;
+        });
+    });
+}
+
+function checkUsersTapped(meetingid)
+{
+    var query = "SELECT approvedCount,participantsCount FROM autoscheduler.meetingRequest where meeting_id = "+meetingid+"; "
+    console.log(query)
+    pool.getConnection(function (err, connection) {
+        if (err) {
+            return;
+        }
+
+        console.log('connected as id ' + connection.threadId);
+
+        connection.query(query, function (err, rows) {
+            connection.release();
+            if (!err) {
+                if(rows[0]["approvedCount"] == rows[0]["participantsCount"]) {
+                    getcommonfreetime(meetingid)
+                    clearFlag(meetingid)
+                }
+            }
+        });
+
+        connection.on('error', function (err) {
+            return;
+        });
+    });
+}
 
 module.exports = router;
