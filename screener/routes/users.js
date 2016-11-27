@@ -139,7 +139,7 @@ function sign_up(req, res) {
                     whereVals: [{ user_device_id: req.body["identification"] }, req.body["username"]],
                     callback: function(rowsInner) {
                         res.json({ status: true });
-                        PushNM.SendNotification(req.body["identification"], "Hi This is your number: " + req.body["username"]);
+                        PushNM.SendNotification(req.body["identification"], { message: "Hi This is your number: " + req.body["username"], sType: "CheckUserExist", bActionRequired: "false"}, true);
                     }
                 };
                 handle_database(req, res, params);
@@ -155,7 +155,8 @@ function sign_up(req, res) {
                     whereVals: where,
                     callback: function(rowsInner) {
                         res.json({ status: true });
-                        PushNM.SendNotification(req.body["identification"], "Hi This is your number: " + req.body["username"]);
+                        PushNM.SendNotification(req.body["identification"], { message: "Hi This is your number: " + req.body["username"], sType: "CheckUserExist", bActionRequired: "false"}, true);
+                        
                     }
                 };
                 handle_database(req, res, params);
@@ -167,7 +168,9 @@ function sign_up(req, res) {
 
 function initiateMeeting(req, res) {
     var startTime = new Date(req.body["starttime"]).toISOString().slice(0, 19).replace('T', ' ');
+    startTime = startTime.substring(0, startTime.length - 3);
     var endTime = new Date(req.body["endtime"]).toISOString().slice(0, 19).replace('T', ' ');
+    endTime = endTime.substring(0, endTime.length - 3);
     var duration = req.body["duration"];
     var participantsList = req.body["participants"];
     var owner = req.body["owner"];
@@ -187,30 +190,64 @@ function initiateMeeting(req, res) {
         whereVals: whereVals,
         callback: function(rows) {
             console.log(rows);
-            whereVals = [];
-            participantsList.forEach(function(oItem){
-                whereVals.push([rows.insertId, oItem]);
-            });
-
-            var params = {
-                sType: "BulkInsert",
-                errors: {
-                    errors_101: Constants.Errors._101,
-                    queryFailed: Constants.Errors.SomethingWentWrong
-                },
-                query: Constants.Queries.Scheduler.InsertMeetingParticipants.query,
-                whereVals: whereVals,
-                callback: function(rowsInner) {
-                    console.log(rowsInner);
-                    res.json({ status: true, insertedId: rows.insertId, message: "Inserted" });
-                }
-            };
-            handle_database(req, res, params);
-
-
+            var otherParams = {
+                rows: rows,
+                participantsList: participantsList,
+                startTime: startTime,
+                endTime: endTime,
+            }
+            InsertMeetingParticipants(req, res, otherParams);
         }
     };
     handle_database(req, res, params);
+}
+
+function InsertMeetingParticipants(req, res, otherParams) {
+    var whereVals = [];
+    otherParams.participantsList.forEach(function(oItem) {
+        whereVals.push([otherParams.rows.insertId, oItem]);
+    });
+    var params = {
+        sType: "BulkInsert",
+        errors: {
+            errors_101: Constants.Errors._101,
+            queryFailed: Constants.Errors.SomethingWentWrong
+        },
+        query: Constants.Queries.Scheduler.InsertMeetingParticipants.query,
+        whereVals: whereVals,
+        callback: function(rowsInner) {
+            console.log(rowsInner);
+            SendNotificationToParticipants(req, res, otherParams);
+        }
+    };
+    handle_database(req, res, params);
+}
+
+function SendNotificationToParticipants(req, res, otherParams) {
+    var whereVals = [];
+    var totalSent = 0;
+    otherParams.participantsList.forEach(function(oItem) {
+        whereVals = [oItem];
+        var params = {
+            sType: "GetParticpants",
+            errors: {
+                errors_101: Constants.Errors._101,
+                queryFailed: Constants.Errors.SomethingWentWrong
+            },
+            query: Constants.Queries.Scheduler.GetMeetingParticipantsDeviceId.query,
+            whereVals: whereVals,
+            callback: function(rowsInner) {
+                console.log(rowsInner);
+                var deviceId = rowsInner[0].user_device_id;
+                PushNM.SendNotification(deviceId, { message: "You have a new meeting request", sType: "NewMeetingReq", bActionRequired: "true", meetingId: otherParams.rows.insertId.toString(), dStartDate: otherParams.startTime, dEndDate: otherParams.endTime}, false);
+                // Send response after notification is sent
+                if (++totalSent === otherParams.participantsList.length) {
+                    res.json({ status: true, insertedId: otherParams.rows.insertId, message: "Inserted" });
+                }
+            }
+        };
+        handle_database(req, res, params);
+    });
 }
 
 /*
@@ -239,30 +276,30 @@ function sign_up(req, res) {
     });
 }
 */
-function checkUserExist(req, res) {
-    pool.getConnection(function(err, connection) {
-        if (err) {
-            res.json({ "code": 100, "status": "Error in connection database" });
-            return;
-        }
+// function checkUserExist(req, res) {
+//     pool.getConnection(function(err, connection) {
+//         if (err) {
+//             res.json({ "code": 100, "status": "Error in connection database" });
+//             return;
+//         }
 
-        console.log('connected as id ' + connection.threadId);
-        console.log("insert into users values(" + req.body["username"] + "," + req.body["identification"] + ");");
-        var oSaveDate = { users_number: req.body["username"], user_device_id: req.body["identification"] };
-        connection.query("SELECT * FROM users SET ?", oSaveDate, function(err, rows) {
-            connection.release();
-            if (!err) {
-                PushNM.SendNotification(req.body["identification"], "Hi This is your number: " + req.body["username"]);
-                res.json({ status: true });
-            }
-        });
+//         console.log('connected as id ' + connection.threadId);
+//         console.log("insert into users values(" + req.body["username"] + "," + req.body["identification"] + ");");
+//         var oSaveDate = { users_number: req.body["username"], user_device_id: req.body["identification"] };
+//         connection.query("SELECT * FROM users SET ?", oSaveDate, function(err, rows) {
+//             connection.release();
+//             if (!err) {
+//                 PushNM.SendNotification(req.body["identification"], { message: "Hi This is your number: " + req.body["username"], sType: "CheckUserExist", bActionRequired: false}, true);
+//                 res.json({ status: true });
+//             }
+//         });
 
-        connection.on('error', function(err) {
-            res.json({ "code": 100, "status": "Error in connection database" });
-            return;
-        });
-    });
-}
+//         connection.on('error', function(err) {
+//             res.json({ "code": 100, "status": "Error in connection database" });
+//             return;
+//         });
+//     });
+// }
 
 function get_users(req, res) {
     pool.getConnection(function(err, connection) {

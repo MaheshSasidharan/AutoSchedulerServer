@@ -18,6 +18,10 @@ var Constants = {
 			{
 				query: "INSERT INTO MeetingParticipants (meetingid, user) VALUES ?"
 			},
+			GetMeetingParticipantsDeviceId: 
+			{
+				query: "Select user_device_id from Users where users_number = ?"
+			},
         }
     },
     Errors: {

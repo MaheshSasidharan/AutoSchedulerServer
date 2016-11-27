@@ -1,7 +1,7 @@
 var apn = require('apn');
 
 var oAPN = {
-	SendNotification: function(sToken, sMessage){
+    SendNotification: function(sToken, oMessage, bSendResponse) {
         var service = new apn.Provider({
             cert: __dirname + "/conf/cert.pem",
             key: __dirname + "/conf/key.pem",
@@ -18,20 +18,37 @@ var oAPN = {
         service.on("transmitted", function(notification) {
             console.log("Transmitted");
         });
+        // var sMsg = null;
+        // var oPayload = {
+        //     oData: "Empty Payload",
+        //     sType: "NoAction"
+        // };
+        // if (typeof oMessage === "object") {
+        //     sMsg = oMessage.message;
+        //     oPayload.oData = oMessage.meetingId;
+        //     oPayload.sType = "ActionRequired"
+        // } else {
+        //     sMsg = oMessage
+        // }
 
         var note = new apn.Notification({
-            alert:  sMessage
+            alert: oMessage.message,
+            payload: oMessage
         });
         note.badge = 1;
         note.topic = "autosched.team12.com";
 
-        service.send(note, sToken).then(function(){
-            res.json({ "code": 100, "status": "SUCCESS" });
-        }).catch(function(){
-        	res.json({ "code": 500, "status": "FAILED" });
+        service.send(note, sToken).then(function() {
+            if (bSendResponse) {
+                res.json({ "code": 100, "status": "SUCCESS" });
+            }
+        }).catch(function() {
+            if (bSendResponse) {
+                res.json({ "code": 500, "status": "FAILED" });
+            }
         });
         service.shutdown();
-	}
+    }
 }
 
 module.exports = oAPN;
