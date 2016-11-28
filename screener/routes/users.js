@@ -16,7 +16,20 @@ router.get('/', function(req, res, next) {
 });
 
 router.get('/test', function(req, res, next) {
-    handle_database(req, res);
+    var query = "SELECT * FROM Users";
+    console.log(query)
+    pool.getConnection(function(err, connection) {
+        if (err) {
+            return;
+        }
+        connection.query(query, function(err, rows) {
+            connection.release();
+            res.json({ rows: rows })
+        });
+        connection.on('error', function(err) {
+            return;
+        });
+    });
 });
 
 router.post('/signup', function(req, res, next) {
@@ -68,7 +81,7 @@ function updateFreeTime(req, res) {
 
             if (!err) {
                 updateFlag(meeting)
-                
+
                 res.json({ status: true });
             }
         });
@@ -246,7 +259,7 @@ function getcommonfreetime(meetingId) {
             connection.release();
             if (!err) {
                 clearFlag(meetingId)
-                
+
                 return
             }
         });
@@ -352,7 +365,7 @@ function clearFlag(meetingId) {
         }
         connection.query(query, function(err, rows) {
             connection.release();
-            if(!err){
+            if (!err) {
                 sugestedTime(meetingId)
             }
 
@@ -375,7 +388,7 @@ function checkUsersTapped(meetingid) {
             if (!err) {
                 if (rows[0]["approvedCount"] == rows[0]["participantsCount"]) {
                     getcommonfreetime(meetingid)
-                    
+
                 }
             }
         });
