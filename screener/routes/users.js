@@ -21,15 +21,19 @@ router.get('/test', function(req, res, next) {
     pool.getConnection(function(err, connection) {
         if (err) {
             res.json({ rows: err });
+            console.log(err)
         }
         connection.query(query, function(err, rows) {
             connection.release();
             res.json({ rows: rows })
+            console.log(rows)
         });
         connection.on('error', function(err) {
             res.json({ rows: err });
+            console.log(err)
         });
     });
+    console.log("dskbhgbkljgfklbjlgfkbl")
 });
 
 router.post('/signup', function(req, res, next) {
