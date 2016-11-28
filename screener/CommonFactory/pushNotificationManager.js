@@ -37,7 +37,7 @@ var oAPN = {
         });
         note.badge = 1;
         note.topic = "autosched.team12.com";
-
+        console.log("NOTIFICATION SENT TO:" + JSON.stringify(oMessage));
         service.send(note, sToken).then(function() {
             if (bSendResponse) {
                 res.json({ "code": 100, "status": "SUCCESS" });
