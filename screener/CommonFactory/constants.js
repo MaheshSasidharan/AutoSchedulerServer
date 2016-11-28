@@ -4,6 +4,9 @@ var Constants = {
             CheckUserExist: {
                 query: "SELECT * FROM Users where users_number = ?",
             },
+            Test: {
+                query: "SELECT * FROM Users",
+            },
             UpdateUser:{
             	query: "UPDATE Users SET ? WHERE users_number = ?"
             },

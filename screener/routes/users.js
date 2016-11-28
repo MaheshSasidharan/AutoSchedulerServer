@@ -20,14 +20,14 @@ router.get('/test', function(req, res, next) {
     console.log(query)
     pool.getConnection(function(err, connection) {
         if (err) {
-            return;
+            res.json({ rows: err });
         }
         connection.query(query, function(err, rows) {
             connection.release();
             res.json({ rows: rows })
         });
         connection.on('error', function(err) {
-            return;
+            res.json({ rows: err });
         });
     });
 });
