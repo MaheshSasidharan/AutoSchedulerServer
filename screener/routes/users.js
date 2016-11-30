@@ -198,7 +198,7 @@ function InsertMeetingParticipants(req, res, otherParams) {
         query: Constants.Queries.Scheduler.InsertMeetingParticipants.query,
         whereVals: whereVals,
         callback: function(rowsInner) {
-            console.log("InsertMeetingParticipants -- " + JSON.stringify(rowsInner));
+            //console.log("InsertMeetingParticipants -- " + JSON.stringify(rowsInner));
             SendNotificationToParticipants(req, res, otherParams);
         }
     };
@@ -287,7 +287,8 @@ function sugestedTime(meetingid) {
             if (!err) {
                 function SendNotification(meetingRecipients) {
                     meetingRecipients.forEach(function(oItem) {
-                        PushNM.SendNotification(oItem.user_device_id, { message: "Suggested times have been updated", sType: "UpdatedSuggestedTimes", bActionRequired: "true", meetingId: meetingid.toString(), arrSuggestedTimes: JSON.stringify(arrSuggestedTimes) }, false);
+                        //PushNM.SendNotification(oItem.user_device_id, { message: "Suggested times have been updated", sType: "UpdatedSuggestedTimes", bActionRequired: "true", meetingId: meetingid.toString(), arrSuggestedTimes: JSON.stringify(arrSuggestedTimes) }, false);
+                        PushNM.SendNotification(oItem.user_device_id, { message: "Suggested times have been updated", sType: "UpdatedSuggestedTimes", bActionRequired: "true", meetingId: meetingid.toString(), arrSuggestedTimes:  JSON.stringify(arrSuggestedTimes)}, false);
                     });
                     SendNotificationToOwner(meetingid, arrSuggestedTimes);
                     return;
@@ -359,7 +360,6 @@ function updateFlag(meetingId) {
     });
 }
 
-
 function clearFlag(meetingId) {
     var query = "update meetingRequest set approvedCount = 0 where meeting_id =" + meetingId + ";"
     //console.log(query)
@@ -390,7 +390,7 @@ function checkUsersTapped(meetingid) {
         connection.query(query, function(err, rows) {
             connection.release();
             if (!err) {
-                console.log("checkUsersTapped" + JSON.stringify(rows[0]));
+                //console.log("checkUsersTapped" + JSON.stringify(rows[0]));
                 if (rows[0]["approvedCount"] == rows[0]["participantsCount"]) {
                     getcommonfreetime(meetingid)
 
@@ -435,8 +435,8 @@ function setPriorities(req, res) {
         connection.query(query, function(err, rows) {
             connection.release();
             if (!err) {
-                updateFlag(meeting)
-                checkUsersRanked(meeting)
+                //updateFlag(meeting)
+                updateFlagAfterSettingPriorities(meeting);
                 res.json({ status: true });
             }
         });
@@ -448,8 +448,8 @@ function setPriorities(req, res) {
     });
 }
 
-function FinilizeSchedule(meetingid) {
-    var query = "select starttime, endtime, sum(rank) from meetingrankings where meetingid = " + meetingid + " group by starttime, endtime having sum(rank) > 0 order by sum(rank), starttime limit 1";
+function updateFlagAfterSettingPriorities(meetingId) {
+    var query = "update meetingRequest set approvedCount = approvedCount+1 where meeting_id =" + meetingId + ";"
     //console.log(query)
     pool.getConnection(function(err, connection) {
         if (err) {
@@ -458,10 +458,9 @@ function FinilizeSchedule(meetingid) {
         connection.query(query, function(err, rows) {
             connection.release();
             if (!err) {
-                var start = DateFormatter(rows[0]["starttime"], "yyyy-mm-dd hh:MM");
-                var end = DateFormatter(rows[0]["endtime"], "yyyy-mm-dd hh:MM");
-                finalEvent(meetingid, start, end);
+                checkUsersRanked(meetingId);
             }
+
         });
         connection.on('error', function(err) {
             return;
@@ -480,8 +479,29 @@ function checkUsersRanked(meetingid) {
             connection.release();
             if (!err) {
                 if (rows[0]["approvedCount"] == rows[0]["participantsCount"]) {
-                    FinilizeSchedule(meetingid)
+                    FinilizeSchedule(meetingid);
                 }
+            }
+        });
+        connection.on('error', function(err) {
+            return;
+        });
+    });
+}
+
+function FinilizeSchedule(meetingid) {
+    var query = "select starttime, endtime, sum(rank) from meetingrankings where meetingid = " + meetingid + " group by starttime, endtime having sum(rank) > 0 order by sum(rank), starttime limit 1";
+    //console.log(query)
+    pool.getConnection(function(err, connection) {
+        if (err) {
+            return;
+        }
+        connection.query(query, function(err, rows) {
+            connection.release();
+            if (!err) {
+                var start = DateFormatter(rows[0]["starttime"], "yyyy-mm-dd hh:MM");
+                var end = DateFormatter(rows[0]["endtime"], "yyyy-mm-dd hh:MM");
+                finalEvent(meetingid, start, end);
             }
         });
         connection.on('error', function(err) {

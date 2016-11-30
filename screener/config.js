@@ -1,21 +1,21 @@
 var config = {
 development: {
-    // poolConfig: {
-    //     connectionLimit : 100, //important
-    //     host     : 'localhost',
-    //     user     : 'sasidharan',
-    //     password : 'pass@123',
-    //     database : 'ulu8fbsvef0qz3iv',
-    //     debug    :  false
-    // },
     poolConfig: {
         connectionLimit : 100, //important
-        host     : 'ehc1u4pmphj917qf.cbetxkdyhwsb.us-east-1.rds.amazonaws.com',
-        user     : 'm1xeyx0bttelkcw8',
-        password : 'evlob12rbvq02z4g',
+        host     : 'localhost',
+        user     : 'sasidharan',
+        password : 'pass@123',
         database : 'ulu8fbsvef0qz3iv',
         debug    :  false
-    }
+    },
+    // poolConfig: {
+    //     connectionLimit : 100, //important
+    //     host     : 'ehc1u4pmphj917qf.cbetxkdyhwsb.us-east-1.rds.amazonaws.com',
+    //     user     : 'm1xeyx0bttelkcw8',
+    //     password : 'evlob12rbvq02z4g',
+    //     database : 'ulu8fbsvef0qz3iv',
+    //     debug    :  false
+    // }
 },
 production: {
     //url to be used in link generation
