@@ -2,28 +2,28 @@ var Constants = {
     Queries: {
         Scheduler: {
             CheckUserExist: {
-                query: "SELECT * FROM Users where users_number = ?",
+                query: "SELECT * FROM users where users_number = ?",
             },
             Test: {
-                query: "SELECT * FROM Users",
+                query: "SELECT * FROM users",
             },
             UpdateUser:{
-            	query: "UPDATE Users SET ? WHERE users_number = ?"
+            	query: "UPDATE users SET ? WHERE users_number = ?"
             },
             InsertUser:{
-            	query: "INSERT INTO Users SET ?"
+            	query: "INSERT INTO users SET ?"
             },
 			InitiateMeeting: 
 			{
-				query: "INSERT INTO MeetingRequest (meetingowner,participantsCount,approvedCount,rangeStart, rangeEnd, meetingduration,status,location) VALUES ?"
+				query: "INSERT INTO meetingRequest (meetingowner,participantsCount,approvedCount,rangeStart, rangeEnd, meetingduration,status,location) VALUES ?"
 			},
 			InsertMeetingParticipants: 
 			{
-				query: "INSERT INTO MeetingParticipants (meetingid, user) VALUES ?"
+				query: "INSERT INTO meetingparticipants (meetingid, user) VALUES ?"
 			},
 			GetMeetingParticipantsDeviceId: 
 			{
-				query: "Select user_device_id from Users where users_number = ?"
+				query: "Select user_device_id from users where users_number = ?"
 			},
         }
     },

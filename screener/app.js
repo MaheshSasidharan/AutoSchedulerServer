@@ -9,7 +9,6 @@ var cors = require('cors');
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
-var assessments = require('./routes/assessments');
 
 
 var Helper = require('./CommonFactory/helper');
@@ -104,7 +103,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', routes);
 app.use('/users', users);
-app.use('/assessments', assessments);
 
 
 // catch 404 and forward to error handler
