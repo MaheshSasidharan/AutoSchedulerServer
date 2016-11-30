@@ -2,9 +2,12 @@ var apn = require('apn');
 
 var oAPN = {
     SendNotification: function(sToken, oMessage, bSendResponse) {
+        //var environment = process.env.NODE_ENV || 'development';
+        var environment = 'development';
         var service = new apn.Provider({
-            cert: __dirname + "/conf/cert.pem",
-            key: __dirname + "/conf/key.pem",
+            cert: __dirname + "/conf/" + environment + "/cert.pem",
+            key: __dirname + "/conf/" + environment + "/key.pem",
+            production: false
         });
 
         service.on("completed", function() { console.log("Completed!") });

@@ -57,6 +57,11 @@ router.post('/initiatemeeting', function(req, res) {
     initiateMeeting(req, res);
 });
 
+
+router.get('yourmeeting', function(req, res)){
+    getYourMeetings(req, res);
+});
+
 function updateFreeTime(req, res) {
     //console.log(req.body["username"])
     var user = req.body["username"]
@@ -231,6 +236,28 @@ function SendNotificationToParticipants(req, res, otherParams) {
         handle_database(req, res, params);
     });
 }
+
+function get_users(req, res) {
+    pool.getConnection(function(err, connection) {
+        if (err) {
+            res.json({ "code": 100, "status": "Error in connection database" });
+            return;
+        }
+        ////console.log("select users_number from users where users_number in (" + req.body["username"] + ")")
+        connection.query("select users_number from users where users_number in (" + req.body["username"] + ")", function(err, rows) {
+            connection.release();
+            if (!err) {
+                res.json({ status: true, users: rows });
+            }
+        });
+        connection.on('error', function(err) {
+            res.json({ "code": 100, "status": "Error in connection database" });
+            return;
+        });
+    });
+}
+
+
 
 function get_users(req, res) {
     pool.getConnection(function(err, connection) {
@@ -562,32 +589,67 @@ function SendNotificationToOwnerFinal(meetingId, start, end) {
 }
 
 function handle_database(req, res, params) {
+    var query = "SELECT * FROM meetingsuggestions where meetingid in (SELECT meeting_Id FROM meetingRequest where meetingowner = '"+req.body["username"]+"' and status = 'pending')";
+    SELECT * FROM meetingsuggestions where meetingid in
+(SELECT meeting_Id FROM meetingRequest
+where meetingowner = '3195122079' and status = 'pending'
+);
     pool.getConnection(function(err, connection) {
         if (err) {
             res.json(params.errors.errors_101);
             return;
         }
-        switch (params.sType) {
-            case "BulkInsert":
-                connection.query(params.query, [params.whereVals], function(err, rows) {
-                    connection.release();
-                    if (!err) {
-                        params.callback(rows);
-                    } else {
-                        res.json({ status: false, msg: params.errors.queryFailed });
-                    }
-                });
-                break;
-            default:
-                connection.query(params.query, params.whereVals, function(err, rows) {
-                    connection.release();
-                    if (!err) {
-                        params.callback(rows);
-                    } else {
-                        res.json({ status: false, msg: params.errors.queryFailed });
-                    }
-                });
+        connection.query(query, function(err, rows) {
+            connection.release();
+            if (!err) {
+                PushNM.SendNotification(rows[0].user_device_id, { message: "Your meeting has been finalized", sType: "FinalizedSuggestedTimes", bActionRequired: "true", meetingId: meetingId.toString(),  dStartTime: start.toString(), dEndTime: end.toString() }, false);
+                return;
+            }
+        });
+        connection.on('error', function(err) {
+            return;
+        });
+        
+    });
+}
+
+function getYourMeetings(req, res) {
+    pool.getConnection(function(err, connection) {
+        if (err) {
+            res.json({ "code": 100, "status": "Error in connection database" });
+            return;
         }
+        ////console.log("select users_number from users where users_number in (" + req.body["username"] + ")")
+        connection.query("select users_number from users where users_number in (" + req.body["username"] + ")", function(err, rows) {
+            connection.release();
+            if (!err) {
+                res.json({ status: true, users: rows });
+            }
+        });
+        connection.on('error', function(err) {
+            res.json({ "code": 100, "status": "Error in connection database" });
+            return;
+        });
+    });
+}
+
+function getRequests(req, res) {
+    pool.getConnection(function(err, connection) {
+        if (err) {
+            res.json({ "code": 100, "status": "Error in connection database" });
+            return;
+        }
+        ////console.log("select users_number from users where users_number in (" + req.body["username"] + ")")
+        connection.query("select users_number from users where users_number in (" + req.body["username"] + ")", function(err, rows) {
+            connection.release();
+            if (!err) {
+                res.json({ status: true, users: rows });
+            }
+        });
+        connection.on('error', function(err) {
+            res.json({ "code": 100, "status": "Error in connection database" });
+            return;
+        });
     });
 }
 
