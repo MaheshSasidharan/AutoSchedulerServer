@@ -17,7 +17,7 @@ router.get('/', function(req, res, next) {
 });
 
 router.get('/test', function(req, res, next) {
-    var query = "SELECT * FROM Users";
+    var query = "SELECT * FROM users";
     //console.log(query)
     pool.getConnection(function(err, connection) {
         if (err) {
