@@ -27,7 +27,7 @@ router.get('/test', function(req, res, next) {
         connection.query(query, function(err, rows) {
             connection.release();
             res.json({ rows: rows })
-            //console.log(rows)
+                //console.log(rows)
         });
         connection.on('error', function(err) {
             res.json({ rows: err });
@@ -58,7 +58,7 @@ router.post('/initiatemeeting', function(req, res) {
 });
 
 
-router.get('yourmeeting', function(req, res)){
+router.get('yourmeeting', function(req, res) {
     getYourMeetings(req, res);
 });
 
@@ -68,7 +68,7 @@ function updateFreeTime(req, res) {
     var meeting = parseInt(req.body["meetingid"])
     var starts = req.body["strtdates"]
     var ends = req.body["enddates"]
-    //console.log(ends)
+        //console.log(ends)
     var query = "insert into availabletime values"
     for (i = 0; i < starts.length - 1; i++) {
         //console.log(starts[i])
@@ -165,7 +165,7 @@ function initiateMeeting(req, res) {
     var location = req.body["location"];
     var whereVals = [];
 
-    whereVals.push([owner, participantsList.length+1, 0, startTime, endTime, duration, status, location]);
+    whereVals.push([owner, participantsList.length + 1, 0, startTime, endTime, duration, status, location]);
 
     var params = {
         sType: "BulkInsert",
@@ -280,9 +280,9 @@ function get_users(req, res) {
 }
 
 function getcommonfreetime(meetingId) {
-    var query = "insert into meetingsuggestions (meetingid, starttime, endtime) select " + meetingId + ", f.startDate, f.endDate from (select s.* from (SELECT startDate, endDate, count(endDate) as 'counts' FROM availabletime where meetingid = "+ meetingId+" " +
+    var query = "insert into meetingsuggestions (meetingid, starttime, endtime) select " + meetingId + ", f.startDate, f.endDate from (select s.* from (SELECT startDate, endDate, count(endDate) as 'counts' FROM availabletime where meetingid = " + meetingId + " " +
         "group by startDate, endDate) s where s.counts = (select participantsCount from meetingRequest where meeting_id = " + meetingId + ")) as f"
-    ////console.log(query)
+        ////console.log(query)
     pool.getConnection(function(err, connection) {
         if (err) {
             return;
@@ -315,7 +315,7 @@ function sugestedTime(meetingid) {
                 function SendNotification(meetingRecipients) {
                     meetingRecipients.forEach(function(oItem) {
                         //PushNM.SendNotification(oItem.user_device_id, { message: "Suggested times have been updated", sType: "UpdatedSuggestedTimes", bActionRequired: "true", meetingId: meetingid.toString(), arrSuggestedTimes: JSON.stringify(arrSuggestedTimes) }, false);
-                        PushNM.SendNotification(oItem.user_device_id, { message: "Suggested times have been updated", sType: "UpdatedSuggestedTimes", bActionRequired: "true", meetingId: meetingid.toString(), arrSuggestedTimes:  JSON.stringify(arrSuggestedTimes)}, false);
+                        PushNM.SendNotification(oItem.user_device_id, { message: "Suggested times have been updated", sType: "UpdatedSuggestedTimes", bActionRequired: "true", meetingId: meetingid.toString(), arrSuggestedTimes: JSON.stringify(arrSuggestedTimes) }, false);
                     });
                     SendNotificationToOwner(meetingid, arrSuggestedTimes);
                     return;
@@ -352,7 +352,7 @@ function SendNotificationToOwner(meetingid, arrSuggestedTimes) {
 
 function GetUsersByMeetingId(meetingId, Callback) {
     var query = "select u.users_number, u.user_device_id from users u join meetingparticipants m on u.users_number = m.user where m.meetingid =" + meetingId + ";"
-    //console.log(query)
+        //console.log(query)
     pool.getConnection(function(err, connection) {
         if (err) {
             return;
@@ -369,7 +369,7 @@ function GetUsersByMeetingId(meetingId, Callback) {
 
 function updateFlag(meetingId) {
     var query = "update meetingRequest set approvedCount = approvedCount+1 where meeting_id =" + meetingId + ";"
-    //console.log(query)
+        //console.log(query)
     pool.getConnection(function(err, connection) {
         if (err) {
             return;
@@ -389,7 +389,7 @@ function updateFlag(meetingId) {
 
 function clearFlag(meetingId) {
     var query = "update meetingRequest set approvedCount = 0 where meeting_id =" + meetingId + ";"
-    //console.log(query)
+        //console.log(query)
     pool.getConnection(function(err, connection) {
         if (err) {
             return;
@@ -409,7 +409,7 @@ function clearFlag(meetingId) {
 
 function checkUsersTapped(meetingid) {
     var query = "SELECT approvedCount,participantsCount FROM meetingRequest where meeting_id = " + meetingid + "; "
-    //console.log(query)
+        //console.log(query)
     pool.getConnection(function(err, connection) {
         if (err) {
             return;
@@ -438,9 +438,9 @@ function setPriorities(req, res) {
     var ends = req.body["enddates"]
     var ranks = req.body["ranks"]
 
-    starts = starts.replace("[","").replace("]","").split(",");
-    ends = ends.replace("[","").replace("]","").split(",");
-    ranks = ranks.replace("[","").replace("]","").split(",");
+    starts = starts.replace("[", "").replace("]", "").split(",");
+    ends = ends.replace("[", "").replace("]", "").split(",");
+    ranks = ranks.replace("[", "").replace("]", "").split(",");
 
     //console.log(ends)
     var query = "insert into meetingrankings values"
@@ -477,7 +477,7 @@ function setPriorities(req, res) {
 
 function updateFlagAfterSettingPriorities(meetingId) {
     var query = "update meetingRequest set approvedCount = approvedCount+1 where meeting_id =" + meetingId + ";"
-    //console.log(query)
+        //console.log(query)
     pool.getConnection(function(err, connection) {
         if (err) {
             return;
@@ -497,7 +497,7 @@ function updateFlagAfterSettingPriorities(meetingId) {
 
 function checkUsersRanked(meetingid) {
     var query = "SELECT approvedCount,participantsCount FROM meetingRequest where meeting_id = " + meetingid + "; "
-    //console.log(query)
+        //console.log(query)
     pool.getConnection(function(err, connection) {
         if (err) {
             return;
@@ -578,7 +578,7 @@ function SendNotificationToOwnerFinal(meetingId, start, end) {
         connection.query(query, function(err, rows) {
             connection.release();
             if (!err) {
-                PushNM.SendNotification(rows[0].user_device_id, { message: "Your meeting has been finalized", sType: "FinalizedSuggestedTimes", bActionRequired: "true", meetingId: meetingId.toString(),  dStartTime: start.toString(), dEndTime: end.toString() }, false);
+                PushNM.SendNotification(rows[0].user_device_id, { message: "Your meeting has been finalized", sType: "FinalizedSuggestedTimes", bActionRequired: "true", meetingId: meetingId.toString(), dStartTime: start.toString(), dEndTime: end.toString() }, false);
                 return;
             }
         });
@@ -589,11 +589,11 @@ function SendNotificationToOwnerFinal(meetingId, start, end) {
 }
 
 function handle_database(req, res, params) {
-    var query = "SELECT * FROM meetingsuggestions where meetingid in (SELECT meeting_Id FROM meetingRequest where meetingowner = '"+req.body["username"]+"' and status = 'pending')";
-    SELECT * FROM meetingsuggestions where meetingid in
-(SELECT meeting_Id FROM meetingRequest
-where meetingowner = '3195122079' and status = 'pending'
-);
+    var query = "SELECT * FROM meetingsuggestions where meetingid in (SELECT meeting_Id FROM meetingRequest where meetingowner = '" + req.body["username"] + "' and status = 'pending')";
+    // SELECT * FROM meetingsuggestions where meetingid in
+    //     (SELECT meeting_Id FROM meetingRequest where meetingowner = '3195122079'
+    //         and status = 'pending'
+    //     );
     pool.getConnection(function(err, connection) {
         if (err) {
             res.json(params.errors.errors_101);
@@ -602,14 +602,14 @@ where meetingowner = '3195122079' and status = 'pending'
         connection.query(query, function(err, rows) {
             connection.release();
             if (!err) {
-                PushNM.SendNotification(rows[0].user_device_id, { message: "Your meeting has been finalized", sType: "FinalizedSuggestedTimes", bActionRequired: "true", meetingId: meetingId.toString(),  dStartTime: start.toString(), dEndTime: end.toString() }, false);
+                PushNM.SendNotification(rows[0].user_device_id, { message: "Your meeting has been finalized", sType: "FinalizedSuggestedTimes", bActionRequired: "true", meetingId: meetingId.toString(), dStartTime: start.toString(), dEndTime: end.toString() }, false);
                 return;
             }
         });
         connection.on('error', function(err) {
             return;
         });
-        
+
     });
 }
 
