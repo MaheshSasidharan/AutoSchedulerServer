@@ -1,36 +1,36 @@
 var Constants = {
-	Queries: {
-		Assessments: {
-			GetAssessmentQuestions: 
+    Queries: {
+        Scheduler: {
+            CheckUserExist: {
+                query: "SELECT * FROM users where users_number = ?",
+            },
+            Test: {
+                query: "SELECT * FROM users",
+            },
+            UpdateUser:{
+            	query: "UPDATE users SET ? WHERE users_number = ?"
+            },
+            InsertUser:{
+            	query: "INSERT INTO users SET ?"
+            },
+			InitiateMeeting: 
 			{
-				//Get assessments and responses if any
-				query: "SELECT questionId, question, assessmentId, nickName, name, description FROM vw_AssessmentQuestions",
+				query: "INSERT INTO meetingRequest (meetingowner,participantsCount,approvedCount,rangeStart, rangeEnd, meetingduration,status,location) VALUES ?"
 			},
-			GetAssessmentResponse: 
+			InsertMeetingParticipants: 
 			{
-				//Get assessments and responses if any
-				query: "SELECT responseTextId, questionId, response, userId FROM ResponseTexts where userId = ?",
+				query: "INSERT INTO meetingparticipants (meetingid, user) VALUES ?"
 			},
-			InsertResponse: 
+			GetMeetingParticipantsDeviceId: 
 			{
-				//Insert new Response texts
-				query: "INSERT INTO ResponseTexts (userId, questionId, response) VALUES ?"
+				query: "Select user_device_id from users where users_number = ?"
 			},
-			UpdateResponse:
-			{
-				//Update Response texts
-				query: "UPDATE ResponseTexts SET ? WHERE responseTextId = ?"
-			}
-		}
-	},
-	Errors: {
-		_101: {"code" : 100, "status" : "Error in connection database"},
-		Assessments: {
-			GetAssessmentQuestionFailed: "Could not get assessments. :(",
-			GetAssessmentResponseFailed: "Could not get assessments. :(",
-			SaveAssessmentFailed: "Something went wrong. Could not save your response."
-		}
-	}
+        }
+    },
+    Errors: {
+        _101: { "code": 100, "status": "Error in connection database" },
+        SomethingWentWrong: "Sorry, something went wrong... :("
+    }
 };
 
 module.exports = Constants;

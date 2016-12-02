@@ -24,6 +24,8 @@
   },
   "homepage": "https://github.com/MaheshSasidharan/Screener#readme",
   "dependencies": {
+    "apn": "^2.1.2",
+    "apns": "^0.1.0",
     "body-parser": "~1.15.1",
     "client-sessions": "^0.7.0",
     "cookie-parser": "~1.4.3",

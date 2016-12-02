@@ -1,3 +1,0 @@
-DROP DATABASE IF EXISTS Screener;
-CREATE DATABASE Screener;
-Use Screener;
