@@ -189,6 +189,7 @@ function initiateMeeting(req, res) {
                 participantsList: participantsList,
                 startTime: startTime,
                 endTime: endTime,
+                duraTion: duration
             }
             InsertMeetingParticipants(req, res, otherParams);
         }
@@ -233,7 +234,7 @@ function SendNotificationToParticipants(req, res, otherParams) {
             callback: function(rowsInner) {
                 ////console.log(rowsInner);
                 var deviceId = rowsInner[0].user_device_id;
-                PushNM.SendNotification(deviceId, { message: "You have a new meeting request", sType: "NewMeetingReq", bActionRequired: "true", meetingId: otherParams.rows.insertId.toString(), dStartDate: otherParams.startTime, dEndDate: otherParams.endTime }, false);
+                PushNM.SendNotification(deviceId, { message: "You have a new meeting request", sType: "NewMeetingReq", bActionRequired: "true", meetingId: otherParams.rows.insertId.toString(), dStartDate: otherParams.startTime, dEndDate: otherParams.endTime, dDuration: otherParams.duraTion }, false);
                 // Send response after notification is sent
                 if (++totalSent === otherParams.participantsList.length) {
                     res.json({ status: true, insertedId: otherParams.rows.insertId, message: "Inserted" });
