@@ -69,6 +69,12 @@ router.post('/getSuggestions', function (req, res, next) {
     getSuggestions(req, res);
 });
 
+router.post('/rejectMeeting', function (req, res, next) {
+    rejectMeeting(req, res);
+});
+
+
+
 function updateFreeTime(req, res) {
     //console.log(req.body["username"])
     var user = req.body["username"]
@@ -374,7 +380,7 @@ function updateFlag(meetingId) {
 }
 
 function clearFlag(meetingId) {
-    var query = "update meetingRequest set approvedCount = 0 where meeting_id =" + meetingId + ";"
+    var query = "update meetingRequest set approvedCount = 0,status = 'suggested'  where meeting_id =" + meetingId + ";"
     //console.log(query)
     pool.getConnection(function(err, connection) {
         if (err) {
@@ -618,9 +624,9 @@ function getRequests(req, res) {
     var user = req.body["username"]
     //var user = '3199309832'
 
-    var query = "SELECT * FROM meetingRequest where approvedCount = participantsCount and meeting_id in " +
+    var query = "SELECT * FROM meetingRequest where status = 'suggested' and meeting_id in " +
         "(SELECT distinct(meetingid) FROM meetingsuggestions) and (meetingowner = '" + user + "' or meeting_id in " +
-        "(select meetingid from meetingparticipants where user = '" + user + "')) and status = 'pending' and " +
+        "(select meetingid from meetingparticipants where user = '" + user + "')) and status = 'suggested' and " +
         "meeting_id not in (select distinct(meetingid) from meetingrankings where user = '" + user + "');"
     //console.log(ends)
     pool.getConnection(function(err, connection) {
@@ -646,7 +652,7 @@ function getSuggestions(req, res) {
 
     //var meetingid = '2'
 
-    var query = "SELECT * FROM autoscheduler.meetingsuggestions where meetingid = '" + meetingid + "';"
+    var query = "SELECT * FROM meetingsuggestions where meetingid = '" + meetingid + "';"
     //console.log(ends)
     pool.getConnection(function(err, connection) {
         if (err) {
@@ -661,6 +667,53 @@ function getSuggestions(req, res) {
         connection.on('error', function(err) {
             res.json({ rows: err });
             //console.log(err)
+        });
+    });
+}
+function rejectMeeting(req, res) {
+    //console.log(req.body["username"])
+    var meetingid = req.body["meetingid"]
+    var userid = req.body["userid"]
+
+    //var meetingid = '2'
+
+    var query = "delete from meetingparticipants where meetingid = '"+meetingid+"' and user ='"+userid+"';"
+    //console.log(ends)
+    pool.getConnection(function(err, connection) {
+        if (err) {
+            res.json({ rows: err });
+            //console.log(err)
+        }
+        connection.query(query, function(err, rows) {
+            connection.release();
+            reduceParticipantsCount(meetingid);
+            res.json({ rows: rows })
+            console.log(rows)
+        });
+        connection.on('error', function(err) {
+            res.json({ rows: err });
+            //console.log(err)
+        });
+    });
+
+}
+
+function reduceParticipantsCount(meetingId) {
+    var query = "update meetingRequest set participantsCount = participantsCount-1  where meeting_id =" + meetingId + ";"
+    //console.log(query)
+    pool.getConnection(function(err, connection) {
+        if (err) {
+            return;
+        }
+        connection.query(query, function(err, rows) {
+            connection.release();
+            if (!err) {
+                return;
+            }
+
+        });
+        connection.on('error', function(err) {
+            return;
         });
     });
 }

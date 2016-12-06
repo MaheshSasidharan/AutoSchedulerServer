@@ -21,6 +21,7 @@ var oAPN = {
         service.on("transmitted", function(notification) {
             console.log("Transmitted");
         });
+        console.log("Token: " + sToken);
         // var sMsg = null;
         // var oPayload = {
         //     oData: "Empty Payload",
