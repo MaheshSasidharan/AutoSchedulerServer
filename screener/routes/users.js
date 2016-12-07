@@ -176,9 +176,10 @@ function initiateMeeting(req, res) {
     var owner = req.body["owner"];
     var status = 'pending';
     var location = req.body["location"];
+    var tiTle = req.body["title"]
     var whereVals = [];
 
-    whereVals.push([owner, participantsList.length+1, 0, startTime, endTime, duration, status, location]);
+    whereVals.push([owner, participantsList.length+1, 0, startTime, endTime, duration, status, location, tiTle]);
 
     var params = {
         sType: "BulkInsert",
@@ -195,7 +196,8 @@ function initiateMeeting(req, res) {
                 participantsList: participantsList,
                 startTime: startTime,
                 endTime: endTime,
-                duraTion: duration
+                duraTion: duration,
+                title: tiTle
             }
             InsertMeetingParticipants(req, res, otherParams);
         }
@@ -534,6 +536,7 @@ function finalEvent(meetingId, start, end) {
     var query = "update meetingRequest set meetingRequest.status = 'Done',  meetingRequest.finalstarttime = '" + start + "' where meeting_Id = " + meetingId + ";";
     //console.log(query)
     var location = '';
+    var title = '';
     pool.getConnection(function(err, connection) {
         if (err) {
             return;
@@ -542,20 +545,34 @@ function finalEvent(meetingId, start, end) {
             connection.release();
             if (!err) {
                 if (!err) {
-                    function SendNotification(meetingRecipients) {
+                    getLocationTitle(meetingId,start,end)
+                }
+            }
+        });
+        connection.on('error', function(err) {
+            return;
+        });
+    });
+}
 
-                        var query1 = "SELECT location FROM autoscheduler.meetingRequest where meeting_id = '" + meetingId + "';";
-                        connection.query(query1, function(err, rows) {
-                            connection.release();
-                            if (!err) {
-                                location = rows[0]["location"];
-                            }
-                        });
+function getLocationTitle(meetingId, start, end) {
+    var query = "SELECT title,location FROM meetingRequest where meeting_id = '" + meetingId + "';";
+    pool.getConnection(function(err, connection) {
+        if (err) {
+            return;
+        }
+        connection.query(query, function(err, rows) {
+            connection.release();
+            if (!err) {
+               if (!err) {
+                    var location = rows[0]["location"]
+                    var title = rows[0]["title"]
+                    function SendNotification(meetingRecipients) {
                         console.log("finalEvent" + "START - " + start + "***** END -- " + end);
                         meetingRecipients.forEach(function(oItem) {
-                            PushNM.SendNotification(oItem.user_device_id, { message: "A new meeting has been scheduled", sType: "FinalizedSuggestedTimes", bActionRequired: "true", meetingId: meetingId.toString(), dStartTime: start.toString(), dEndTime: end.toString() }, false);
+                            PushNM.SendNotification(oItem.user_device_id, { message: "A new meeting has been scheduled", sType: "FinalizedSuggestedTimes", bActionRequired: "true", meetingId: meetingId.toString(), dStartTime: start.toString(), dEndTime: end.toString(), ldocation:location, ttile: title }, false);
                         });
-                        SendNotificationToOwnerFinal(meetingId, start, end, location);
+                        SendNotificationToOwnerFinal(meetingId, start, end, location, title);
                         return;
                     }
                     GetUsersByMeetingId(meetingId, SendNotification);
@@ -570,7 +587,7 @@ function finalEvent(meetingId, start, end) {
     });
 }
 
-function SendNotificationToOwnerFinal(meetingId, start, end, location) {
+function SendNotificationToOwnerFinal(meetingId, start, end, location, title) {
     var query = "SELECT u.user_device_id FROM users u JOIN meetingRequest m on m.meetingowner = u.users_number where m.meeting_id = " + meetingId + ";";
     //console.log(query)
     pool.getConnection(function(err, connection) {
@@ -580,7 +597,7 @@ function SendNotificationToOwnerFinal(meetingId, start, end, location) {
         connection.query(query, function(err, rows) {
             connection.release();
             if (!err) {
-                PushNM.SendNotification(rows[0].user_device_id, { message: "Your meeting has been finalized", sType: "FinalizedSuggestedTimes", bActionRequired: "true", meetingId: meetingId.toString(),  dStartTime: start.toString(), dEndTime: end.toString(), mlocation: location }, false);
+                PushNM.SendNotification(rows[0].user_device_id, { message: "Your meeting has been finalized", sType: "FinalizedSuggestedTimes", bActionRequired: "true", meetingId: meetingId.toString(),  dStartTime: start.toString(), dEndTime: end.toString(), mlocation: location, ttile: title }, false);
                 return;
             }
         });
@@ -711,6 +728,7 @@ function reduceParticipantsCount(meetingId) {
         connection.query(query, function(err, rows) {
             connection.release();
             if (!err) {
+                checkUsersRanked(meetingId);
                 return;
             }
 
