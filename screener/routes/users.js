@@ -430,21 +430,22 @@ function setPriorities(req, res) {
     var ends = req.body["enddates"]
     var ranks = req.body["ranks"]
 
-    starts = starts.replace("[","").replace("]","").split(",");
-    ends = ends.replace("[","").replace("]","").split(",");
+    starts = starts.replace("[","").replace(" +0000]","").split(" +0000,");
+    ends = ends.replace("[","").replace(" +0000]","").split(" +0000,");
     ranks = ranks.replace("[","").replace("]","").split(",");
 
     //console.log(ends)
     var query = "insert into meetingrankings values"
     for (i = 0; i < starts.length - 1; i++) {
         //console.log(starts[i])
-        var startTime = new Date(starts[i]).toISOString().slice(0, 19).replace('T', ' ');
-        var endTime = new Date(ends[i]).toISOString().slice(0, 19).replace('T', ' ');
+        var startTime = starts[i];
+        var endTime = ends[i];
         query = query + "(" + meeting + ",'" + user + "','" + startTime + "','" + endTime + "', " + ranks[i] + "),"
     }
-    var startTime = new Date(starts[starts.length - 1]).toISOString().slice(0, 19).replace('T', ' ');
-    var endTime = new Date(ends[starts.length - 1]).toISOString().slice(0, 19).replace('T', ' ');
+    var startTime = starts[starts.length - 1];
+    var endTime = ends[starts.length - 1];
     query = query + "(" + meeting + ",'" + user + "','" + startTime + "','" + endTime + "', " + ranks[i] + ");"
+    console.log(query)
     pool.getConnection(function(err, connection) {
         if (err) {
             res.json({ "code": 100, "status": "Error in connection database" });
@@ -509,7 +510,7 @@ function checkUsersRanked(meetingid) {
 }
 
 function FinilizeSchedule(meetingid) {
-    var query = "select starttime, endtime, sum(rank) from meetingrankings where meetingid = " + meetingid + " group by starttime, endtime having sum(rank) > 0 order by sum(rank), starttime limit 1";
+    var query = "select DATE_FORMAT(starttime, '%Y-%m-%d %T') as starttime, DATE_FORMAT(endtime, '%Y-%m-%d %T') as endtime, sum(rank) from meetingrankings where meetingid = " + meetingid + " group by starttime, endtime having sum(rank) > 0 order by sum(rank), starttime limit 1";
     //console.log(query)
     pool.getConnection(function(err, connection) {
         if (err) {
@@ -518,8 +519,8 @@ function FinilizeSchedule(meetingid) {
         connection.query(query, function(err, rows) {
             connection.release();
             if (!err) {
-                var start = DateFormatter(rows[0]["starttime"], "yyyy-mm-dd hh:MM");
-                var end = DateFormatter(rows[0]["endtime"], "yyyy-mm-dd hh:MM");
+                var start = rows[0]["starttime"];
+                var end = rows[0]["endtime"];
                 finalEvent(meetingid, start, end);
             }
         });
@@ -650,9 +651,9 @@ function getSuggestions(req, res) {
     //console.log(req.body["username"])
     var meetingid = req.body["meetingid"]
 
-    //var meetingid = '2'
+    //var meetingid = '77'
 
-    var query = "SELECT * FROM meetingsuggestions where meetingid = '" + meetingid + "';"
+    var query = "SELECT DATE_FORMAT(starttime, '%Y-%m-%d %T') as starttime, DATE_FORMAT(endtime, '%Y-%m-%d %T') as endtime FROM meetingsuggestions where meetingid = '" + meetingid + "';"
     //console.log(ends)
     pool.getConnection(function(err, connection) {
         if (err) {
@@ -663,8 +664,10 @@ function getSuggestions(req, res) {
             connection.release();
             res.json({ rows: rows })
             console.log(rows)
+            
         });
         connection.on('error', function(err) {
+            connection.release();
             res.json({ rows: err });
             //console.log(err)
         });
