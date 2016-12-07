@@ -15,7 +15,7 @@ var Constants = {
             },
 			InitiateMeeting: 
 			{
-				query: "INSERT INTO meetingRequest (meetingowner,participantsCount,approvedCount,rangeStart, rangeEnd, meetingduration,status,location) VALUES ?"
+				query: "INSERT INTO meetingRequest (meetingowner,participantsCount,approvedCount,rangeStart, rangeEnd, meetingduration,status,location, title) VALUES ?"
 			},
 			InsertMeetingParticipants: 
 			{
