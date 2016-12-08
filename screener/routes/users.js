@@ -447,7 +447,7 @@ function setPriorities(req, res) {
     var startTime = starts[starts.length - 1];
     var endTime = ends[starts.length - 1];
     query = query + "(" + meeting + ",'" + user + "','" + startTime + "','" + endTime + "', " + ranks[i] + ");"
-    console.log(query)
+    //console.log(query)
     pool.getConnection(function(err, connection) {
         if (err) {
             res.json({ "code": 100, "status": "Error in connection database" });
@@ -568,9 +568,9 @@ function getLocationTitle(meetingId, start, end) {
                     var location = rows[0]["location"]
                     var title = rows[0]["title"]
                     function SendNotification(meetingRecipients) {
-                        console.log("finalEvent" + "START - " + start + "***** END -- " + end);
+                        //console.log("finalEvent" + "START - " + start + "***** END -- " + end);
                         meetingRecipients.forEach(function(oItem) {
-                            PushNM.SendNotification(oItem.user_device_id, { message: "A new meeting has been scheduled", sType: "FinalizedSuggestedTimes", bActionRequired: "true", meetingId: meetingId.toString(), dStartTime: start.toString(), dEndTime: end.toString(), ldocation:location, ttile: title }, false);
+                            PushNM.SendNotification(oItem.user_device_id, { message: "A new meeting has been scheduled", sType: "FinalizedSuggestedTimes", bActionRequired: "true", meetingId: meetingId.toString(), dStartTime: start.toString(), dEndTime: end.toString(), location:location, ttile: title }, false);
                         });
                         SendNotificationToOwnerFinal(meetingId, start, end, location, title);
                         return;
@@ -597,7 +597,7 @@ function SendNotificationToOwnerFinal(meetingId, start, end, location, title) {
         connection.query(query, function(err, rows) {
             connection.release();
             if (!err) {
-                PushNM.SendNotification(rows[0].user_device_id, { message: "Your meeting has been finalized", sType: "FinalizedSuggestedTimes", bActionRequired: "true", meetingId: meetingId.toString(),  dStartTime: start.toString(), dEndTime: end.toString(), mlocation: location, ttile: title }, false);
+                PushNM.SendNotification(rows[0].user_device_id, { message: "Your meeting has been finalized", sType: "FinalizedSuggestedTimes", bActionRequired: "true", meetingId: meetingId.toString(),  dStartTime: start.toString(), dEndTime: end.toString(), location: location, ttile: title }, false);
                 return;
             }
         });
@@ -638,7 +638,6 @@ function handle_database(req, res, params) {
 }
 
 function getRequests(req, res) {
-    //console.log(req.body["username"])
     var user = req.body["username"]
     //var user = '3199309832'
 
@@ -646,16 +645,15 @@ function getRequests(req, res) {
         "(SELECT distinct(meetingid) FROM meetingsuggestions) and (meetingowner = '" + user + "' or meeting_id in " +
         "(select meetingid from meetingparticipants where user = '" + user + "')) and status = 'suggested' and " +
         "meeting_id not in (select distinct(meetingid) from meetingrankings where user = '" + user + "');"
-    //console.log(ends)
+    
     pool.getConnection(function(err, connection) {
         if (err) {
             res.json({ rows: err });
-            //console.log(err)
         }
         connection.query(query, function(err, rows) {
             connection.release();
             res.json({ rows: rows })
-            console.log(rows)
+            //console.log(rows)
         });
         connection.on('error', function(err) {
             res.json({ rows: err });
@@ -665,13 +663,9 @@ function getRequests(req, res) {
 }
 
 function getSuggestions(req, res) {
-    //console.log(req.body["username"])
     var meetingid = req.body["meetingid"]
 
-    //var meetingid = '77'
-
     var query = "SELECT DATE_FORMAT(starttime, '%Y-%m-%d %T') as starttime, DATE_FORMAT(endtime, '%Y-%m-%d %T') as endtime FROM meetingsuggestions where meetingid = '" + meetingid + "';"
-    //console.log(ends)
     pool.getConnection(function(err, connection) {
         if (err) {
             res.json({ rows: err });
@@ -680,7 +674,7 @@ function getSuggestions(req, res) {
         connection.query(query, function(err, rows) {
             connection.release();
             res.json({ rows: rows })
-            console.log(rows)
+            //console.log(rows)
             
         });
         connection.on('error', function(err) {
@@ -708,7 +702,7 @@ function rejectMeeting(req, res) {
             connection.release();
             reduceParticipantsCount(meetingid);
             res.json({ rows: rows })
-            console.log(rows)
+            //console.log(rows)
         });
         connection.on('error', function(err) {
             res.json({ rows: err });
